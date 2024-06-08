@@ -1,6 +1,6 @@
 <?php
-include 'db.php';
 session_start();
+include 'db.php';
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
   $email = $_POST['email'];
@@ -14,6 +14,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     if (password_verify($password, $row['password'])) {
       $_SESSION['user_id'] = $row['id'];
       $_SESSION['username'] = $row['username'];
+      $_SESSION['role'] = $row['role'];
       header("Location: dashboard.php");
       exit();
     } else {
