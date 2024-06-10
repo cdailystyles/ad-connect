@@ -18,4 +18,16 @@ $mediaTypes = [
     "Influencer Recommendations",
     // Add more media types as needed
 ];
+$mediaTypes = [
+    'Billboards',
+    'Word of Mouth',
+    'Bumper Stickers',
+    'Wearing Shirts',
+    'Influencer Recommendations',
+    'Social Media Posts',
+    'Flyers',
+    'Newspaper Ads',
+    'Radio Spots',
+    'TV Commercials'
+];
 ?>
