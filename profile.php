@@ -1,30 +1,37 @@
 <?php
 session_start();
-include 'db.php';  // Ensure your database connection file is correctly included
+include 'db.php';
 
 if (!isset($_SESSION['user_id'])) {
-    header('Location: login.php');  // Redirect to login page if not logged in
+    header('Location: login.php');
     exit();
 }
 
 $user_id = $_SESSION['user_id'];
 
-// Fetch user details
-$stmt = $conn->prepare("SELECT username, email, created_at FROM users WHERE id = ?");
+$sql = "SELECT * FROM users WHERE id = ?";
+$stmt = $conn->prepare($sql);
 $stmt->bind_param("i", $user_id);
 $stmt->execute();
-$result = $stmt->get_result();
-$user = $result->fetch_assoc();
+$userResult = $stmt->get_result();
+$user = $userResult->fetch_assoc();
 $stmt->close();
 
-// Fetch user listings
-$stmt = $conn->prepare("SELECT id, code, title, description, created_at FROM listings WHERE user_id = ?");
+$sql = "SELECT * FROM listings WHERE user_id = ?";
+$stmt = $conn->prepare($sql);
 $stmt->bind_param("i", $user_id);
 $stmt->execute();
-$listings = $stmt->get_result();
+$listingResult = $stmt->get_result();
+$listings = [];
+while ($row = $listingResult->fetch_assoc()) {
+    $listings[] = $row;
+}
 $stmt->close();
-
 $conn->close();
+
+function generateCode($length = 10) {
+    return substr(str_shuffle('0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'), 0, $length);
+}
 ?>
 
 <!DOCTYPE html>
@@ -32,7 +39,37 @@ $conn->close();
 <head>
     <meta charset="UTF-8">
     <title>Profile</title>
-    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .profile-header, .listings-section {
+            margin: 20px;
+            padding: 20px;
+            border: 1px solid #ddd;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .profile-header h2, .listings-section h2 {
+            margin-top: 0;
+        }
+        .listing {
+            border: 1px solid #ccc;
+            margin-bottom: 10px;
+            padding: 10px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: space-between;
+        }
+        .listing img {
+            max-width: 100px;
+            height: auto;
+            margin-right: 10px;
+        }
+        .listing .details {
+            flex-grow: 1;
+        }
+        .listing .actions {
+            text-align: right;
+        }
+    </style>
 </head>
 <body>
 <header>
@@ -40,50 +77,44 @@ $conn->close();
         <div class="logo">Ad Connect</div>
         <ul>
             <li><a href="index.php">Home</a></li>
-            <li><a href="listings.php">Listings</a></li>
-            <li><a href="profile.php">Profile</a></li>
+            <li><a href="create_listing.php">Create Listing</a></li>
             <li><a href="logout.php">Logout</a></li>
         </ul>
     </nav>
 </header>
 <main>
-    <div class="container">
-        <div class="profile-header">
-            <h1><?php echo htmlspecialchars($user['username']); ?>'s Profile</h1>
-            <p>Member since: <?php echo date("F j, Y", strtotime($user['created_at'])); ?></p>
-            <a href="edit_profile.php" class="btn">Edit Profile</a>
-        </div>
-        
-        <div class="profile-section">
-            <h2>Account Details</h2>
-            <p><strong>Email:</strong> <?php echo htmlspecialchars($user['email']); ?></p>
-        </div>
-
-        <div class="profile-section">
-            <h2>Your Listings</h2>
-            <?php if ($listings->num_rows > 0): ?>
-                <ul>
-                    <?php while ($listing = $listings->fetch_assoc()): ?>
-                        <li>
-                            <h3><?php echo htmlspecialchars($listing['title']); ?></h3>
-                            <p><?php echo htmlspecialchars($listing['description']); ?></p>
-                            <p>Listing Code: <?php echo htmlspecialchars($listing['code']); ?></p>
-                            <p>Posted on: <?php echo date("F j, Y", strtotime($listing['created_at'])); ?></p>
-                            <a href="delete_listing.php?id=<?php echo $listing['id']; ?>" class="btn btn-danger">Delete</a>
-                            <a href="create_copy.php?id=<?php echo $listing['id']; ?>" class="btn">Create New from Copy</a>
-                        </li>
-                    <?php endwhile; ?>
-                </ul>
-            <?php else: ?>
-                <p>You have no listings yet.</p>
-            <?php endif; ?>
-        </div>
-
-        <div class="profile-section">
-            <h2>Account Management</h2>
-            <a href="change_password.php" class="btn">Change Password</a>
-            <a href="logout.php" class="btn btn-danger">Logout</a>
-        </div>
+    <div class="profile-header">
+        <h2>Welcome, <?php echo htmlspecialchars($user['username']); ?></h2>
+        <p>Email: <?php echo htmlspecialchars($user['email']); ?></p>
+        <a href="edit_profile.php">Edit Profile</a>
+    </div>
+    <div class="listings-section">
+        <h2>Your Listings</h2>
+        <?php if (empty($listings)): ?>
+            <p>No listings found.</p>
+        <?php else: ?>
+            <?php foreach ($listings as $listing): ?>
+                <div class="listing">
+                    <div class="details">
+                        <h3><?php echo htmlspecialchars($listing['title']); ?></h3>
+                        <p><?php echo htmlspecialchars($listing['description']); ?></p>
+                        <p><strong>Location:</strong> <?php echo htmlspecialchars($listing['state'] . ', ' . $listing['cities']); ?></p>
+                        <p><strong>Media Type:</strong> <?php echo htmlspecialchars($listing['media_type']); ?></p>
+                        <p><strong>Type:</strong> <?php echo htmlspecialchars($listing['buy_sell']); ?></p>
+                    </div>
+                    <div class="actions">
+                        <form action="delete_listing.php" method="post" style="display:inline;">
+                            <input type="hidden" name="listing_id" value="<?php echo $listing['id']; ?>">
+                            <button type="submit">Delete</button>
+                        </form>
+                        <form action="create_copy.php" method="post" style="display:inline;">
+                            <input type="hidden" name="listing_id" value="<?php echo $listing['id']; ?>">
+                            <button type="submit">Create Copy</button>
+                        </form>
+                    </div>
+                </div>
+            <?php endforeach; ?>
+        <?php endif; ?>
     </div>
 </main>
 <footer>
