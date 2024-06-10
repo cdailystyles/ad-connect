@@ -1,24 +1,9 @@
+// states_cities.js
 const statesCities = {
-  "California": ["Los Angeles", "San Francisco", "San Diego"],
-  "Texas": ["Houston", "Dallas", "Austin"],
-  // Add more states and cities as needed
+    "Alabama": ["Birmingham", "Montgomery", "Mobile"],
+    "Alaska": ["Anchorage", "Fairbanks", "Juneau"],
+    "Arizona": ["Phoenix", "Tucson", "Mesa"],
+    // Add more states and cities
+    "California": ["Los Angeles", "San Diego", "San Francisco"],
+    "Texas": ["Houston", "Dallas", "Austin"]
 };
-
-document.addEventListener("DOMContentLoaded", () => {
-  const stateSelect = document.getElementById("state");
-  const citiesSelect = document.getElementById("cities");
-
-  stateSelect.addEventListener("change", () => {
-    const selectedState = stateSelect.value;
-    const cities = statesCities[selectedState] || [];
-    citiesSelect.innerHTML = "";
-
-    cities.forEach(city => {
-      const option = document.createElement("option");
-      option.value = city;
-      option.textContent = city;
-      citiesSelect.appendChild(option);
-    });
-  });
-});
-
